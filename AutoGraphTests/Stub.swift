@@ -24,19 +24,13 @@ class Stub {
     
     var jsonData: Data {
         precondition(self.jsonFixtureFile != nil, "Stub is missing jsonFixtureFile: \(self)")
-        let path: String = {
-            #if os(iOS)
-            return Bundle(for: type(of: self)).path(forResource: self.jsonFixtureFile, ofType: "json")!
-            
-            #else
-            let fileManager = FileManager.default
-            let currentDirectoryPath = fileManager.currentDirectoryPath
-            return "\(currentDirectoryPath)/AutoGraphTests/Data/\(self.jsonFixtureFile!).json"
-            
-            #endif
-        }()
-        print("loading stub at path: \(path)")
-        return FileManager.default.contents(atPath: path)!
+        
+        // Use Bundle.module for SPM resources
+        guard let url = Bundle.module.url(forResource: self.jsonFixtureFile, withExtension: "json", subdirectory: "Data") else {
+            fatalError("Missing test fixture \(self.jsonFixtureFile!).json in Bundle.module/Data")
+        }
+        
+        return try! Data(contentsOf: url)
     }
     
     var graphQLQuery: String = ""

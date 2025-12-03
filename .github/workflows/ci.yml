@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, v2]
+  pull_request:
+    branches: [main, master, v2]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Cache SPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build
+        run: swift build -c release
+
+      - name: Run tests
+        run: swift test --parallel
+
+  test-ios-simulator:
+    name: Test on iOS Simulator
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device: "iPhone 17"
+            os: "26.1"
+          - device: "iPhone 16"
+            os: "18.6"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Show tool versions
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Show available simulators
+        run: xcrun simctl list devices available
+
+      - name: Cache SPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Detect Xcode scheme for Swift package
+        run: |
+          set -eo pipefail
+
+          echo "🔍 Detecting testable scheme via xcodebuild -list -json"
+
+          SCHEMES_JSON=$(xcodebuild -list -json 2>/dev/null || true)
+
+          if [ -z "$SCHEMES_JSON" ]; then
+            echo "❌ xcodebuild -list -json returned no data."
+            exit 1
+          fi
+
+          ALL_SCHEMES=$(echo "$SCHEMES_JSON" | jq -r '
+            [
+              (.project.schemes[]?),
+              (.workspace.schemes[]?)
+            ] | unique | .[]' || true)
+
+          if [ -z "$ALL_SCHEMES" ]; then
+            echo "❌ No schemes found in xcodebuild -list -json output."
+            echo "$SCHEMES_JSON"
+            exit 1
+          fi
+
+          echo "Available schemes:"
+          echo "$ALL_SCHEMES"
+          echo
+
+          PKG_NAME=$(basename "$PWD")
+          echo "Package directory name: $PKG_NAME"
+
+          # 1️⃣ Prefer *-Package
+          PACKAGE_SCHEME=$(echo "$ALL_SCHEMES" | grep -- '-Package$' | head -n 1 || true)
+
+          # 2️⃣ Else scheme == package name
+          if [ -z "$PACKAGE_SCHEME" ]; then
+            PACKAGE_SCHEME=$(echo "$ALL_SCHEMES" | grep -i "^${PKG_NAME}$" | head -n 1 || true)
+          fi
+
+          # 3️⃣ Else first scheme
+          if [ -z "$PACKAGE_SCHEME" ]; then
+            PACKAGE_SCHEME=$(echo "$ALL_SCHEMES" | head -n 1 || true)
+          fi
+
+          if [ -z "$PACKAGE_SCHEME" ]; then
+            echo "❌ Could not determine a scheme to use."
+            exit 1
+          fi
+
+          echo "✅ Using scheme: $PACKAGE_SCHEME"
+          echo "PACKAGE_SCHEME=$PACKAGE_SCHEME" >> "$GITHUB_ENV"
+
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild build-for-testing \
+            -scheme "$PACKAGE_SCHEME" \
+            -destination "platform=iOS Simulator,name=${{ matrix.device }},OS=${{ matrix.os }}" \
+            -enableCodeCoverage YES
+
+      - name: Test on iOS Simulator
+        run: |
+          xcodebuild test \
+            -scheme "$PACKAGE_SCHEME" \
+            -destination "platform=iOS Simulator,name=${{ matrix.device }},OS=${{ matrix.os }}" \
+            -enableCodeCoverage YES
+
+  lint:
+    name: SwiftLint
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: swiftlint lint --reporter github-actions-logging
+        continue-on-error: true
