@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rexmas/JSONValue.git",
       "state" : {
-        "revision" : "696916c028fdb0e30ec2771639135172700d424c",
-        "version" : "7.2.0"
+        "revision" : "8c79a348868726629bfdc20cda6e0855a1abb97f",
+        "version" : "8.0.0"
       }
     },
     {

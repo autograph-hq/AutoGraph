@@ -1,7 +1,8 @@
 [![AutoGraph](https://github.com/remind101/AutoGraph/blob/master/autograph.png)](https://github.com/remind101/AutoGraph/blob/master/autograph.png)
 
-[![CocoaPods Compatible](https://img.shields.io/cocoapods/v/AutoGraph.svg)](https://img.shields.io/cocoapods/v/AutoGraph.svg)
-[![CircleCI](https://circleci.com/gh/remind101/AutoGraph.svg?style=shield)](https://circleci.com/gh/remind101/AutoGraph)
+[![CI](https://github.com/autograph-hq/AutoGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/autograph-hq/AutoGraph/actions/workflows/ci.yml)
+[![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20macOS-lightgrey.svg)](https://github.com/autograph-hq/AutoGraph)
 
 The Swiftest way to GraphQL
 
@@ -24,41 +25,59 @@ AutoGraph is a Swift client framework for making requests using GraphQL and mapp
 
 ## Requirements
 
-Swift 5.9
+- Swift 5.9+
+- Xcode 15.0+
 
+### Version History
+
+- Swift 5.9 iOS 13 - use version `0.18.0` (last version with CocoaPods support)
 - Swift 5.3.2 iOS 11 - use version `0.15.1`
 - Swift 5.2 iOS 10 - use version `0.14.7`
 - Swift 5.1.3 iOS 10 - use version `0.11.1`
 - Swift 5.0 iOS 8 - use version `0.10.0`
 - Swift 5.0 pre Decodable - use version `0.8.0`
-- Swift 4.2+ - use version `0.7.0`.
-- Swift 4.1.2 - use version `0.5.1`.
+- Swift 4.2+ - use version `0.7.0`
+- Swift 4.1.2 - use version `0.5.1`
 
 ### Platforms
 
 - [x] iOS 13.0+
-- [ ] tvOS
-- [ ] watchOS
 - [x] macOS 10.15+
 - [ ] Linux
 
 ## Installation
 
-### CocoaPods
-
-```
-platform :ios, '13.0'
-use_frameworks!
-
-pod 'AutoGraph'
-```
-
 ### Swift Package Manager (SPM)
+
+AutoGraph is available through Swift Package Manager.
+
+Add AutoGraph to your `Package.swift` dependencies:
 
 ```swift
 dependencies: [
-.package(url: "https://github.com/remind101/AutoGraph.git", .upToNextMinor(from: "0.18.0"))
+    .package(url: "https://github.com/autograph-hq/AutoGraph.git", from: "1.0.0")
 ]
+```
+
+Then add it to your target dependencies:
+
+```swift
+targets: [
+    .target(
+        name: "YourTarget",
+        dependencies: [
+            .product(name: "AutoGraphQL", package: "AutoGraph")
+        ]
+    )
+]
+```
+
+### Using Xcode
+
+In Xcode, go to **File → Add Package Dependencies** and enter:
+
+```
+https://github.com/autograph-hq/AutoGraph.git
 ```
 
 ## Code Generation
@@ -262,6 +281,32 @@ class FilmRequest: Request {
 
 Sending via Objective-C isn't directly possible because of AutoGraph's use of `associatedtype` and generics. It is possible to build a bridge(s) from Swift into Objective-C to send requests.
 
+## Development
+
+### Building and Testing
+
+AutoGraph uses Swift Package Manager for dependency management and building.
+
+```bash
+# Build the project
+swift build
+
+# Run tests
+swift test
+
+# Generate an Xcode project (optional)
+swift package generate-xcodeproj
+
+# Or open Package.swift directly in Xcode 11+
+open Package.swift
+```
+
+### Requirements for Development
+
+- Swift 5.9+
+- Xcode 15.0+ (for iOS development)
+- macOS 10.15+ or iOS 13.0+
+
 ## Contributing
 
 - Open an issue if you run into any problems.
@@ -271,8 +316,7 @@ Sending via Objective-C isn't directly possible because of AutoGraph's use of `a
 - Open an issue describing the feature add or problem being solved. An admin will respond ASAP to discuss the addition.
 - You may begin working immediately if you so please, by adding an issue it helps inform others of what is already being worked on and facilitates discussion.
 - Fork the project and submit a pull request. Please include tests for new code and an explanation of the problem being solved. An admin will review your code and approve it before merging.
-- Keep LinuxTests up-to-date `swift test --generate-linuxmain`
-- If you see an error like this while building from the command line `could not build Objective-C module` try prepending commands with `xcrun -sdk macosx`
+- All CI checks must pass before merging
 
 ## License
 

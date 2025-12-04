@@ -1,4 +1,4 @@
-// swift-tools-version:5.9.0
+// swift-tools-version:5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -16,9 +16,9 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMinor(from: "5.8.0")),
-        .package(url: "https://github.com/rexmas/JSONValue.git", .upToNextMinor(from: "8.0.0")),
-        .package(url: "https://github.com/daltoniam/Starscream.git", .exact("4.0.8"))
+        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.8.0"),
+        .package(url: "https://github.com/rexmas/JSONValue.git", from: "8.0.0"),
+        .package(url: "https://github.com/daltoniam/Starscream.git", exact: "4.0.8")
     ],
     targets: [
         .target(
@@ -29,18 +29,32 @@ let package = Package(
                 "Starscream"
             ],
             path: ".",
-            exclude: ["AutoGraph/Info.plist", "QueryBuilder/Info.plist"],
+            exclude: [
+                "AutoGraph/Info.plist",
+                "QueryBuilder/Info.plist",
+                "AutoGraphTests",
+                "QueryBuilderTests"
+            ],
             sources: ["AutoGraph", "QueryBuilder"]
         ),
         .testTarget(
             name: "AutoGraphTests",
             dependencies: ["AutoGraphQL"],
-            path: "./AutoGraphTests"
+            path: "./AutoGraphTests",
+            exclude: [
+                "Info.plist"
+            ],
+            resources: [
+                .copy("Data")
+            ]
         ),
         .testTarget(
             name: "QueryBuilderTests",
             dependencies: ["AutoGraphQL"],
-            path: "./QueryBuilderTests"
+            path: "./QueryBuilderTests",
+            exclude: [
+                "Info.plist"
+            ]
         )
     ]
 )
